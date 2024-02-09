@@ -212,6 +212,7 @@
   const eventTitleInput = document.getElementById("eventTitleInput");
 
   function openModal(date) {
+    return;
     clicked = date;
     const eventForDay = events.find((e) => e.date === clicked);
 
@@ -250,7 +251,14 @@
   }
 
   function load() {
-    const startDate = localStorage.getItem('start-date');
+    let startDate = localStorage.getItem('start-date');
+    if (startDate !== null) {
+      startDate = new Date(startDate);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+      startDate.setSeconds(0);
+    }
+
     // current date
     const dt = new Date();
 
@@ -292,6 +300,9 @@
     // clear previous html in the calendar
     calendar.innerHTML = "";
 
+    const pillsDays = 21;
+    const breakDays = 7;
+
     const frag = document.createDocumentFragment();
     for (let i = 1; i <= paddingDays + daysInMonth + nextPaddingDays; i++) {
       const daySquare = document.createElement("div");
@@ -300,17 +311,26 @@
       const dayString = `${month + 1}/${i - paddingDays}/${year}`;
       if (i > paddingDays && i <= paddingDays + daysInMonth) {
         daySquare.innerText = i - paddingDays;
-        const eventForDay = events.find((e) => e.date === dayString);
-        // mark current day
-        if (i - paddingDays === day && nav === 0) {
-          daySquare.id = "currentDay";
-        }
+        // const eventForDay = events.find((e) => e.date === dayString);
+        // // mark current day
+        // if (i - paddingDays === day && nav === 0) {
+        //   daySquare.id = "currentDay";
+        // }
         // insert the event
-        if (eventForDay) {
-          const eventDiv = document.createElement("div");
-          eventDiv.classList.add("event");
-          eventDiv.innerText = eventForDay.title;
-          daySquare.appendChild(eventDiv);
+        const dateOfCell = new Date(year, month, i - paddingDays, 0, 0, 1);
+        if (startDate !== null && dateOfCell > startDate) {
+          const timeDiff = dateOfCell.getTime() - startDate.getTime();
+          const daysDiff = Math.round(timeDiff / (1000 * 3600 * 24));
+
+          const dayOfCycle = (daysDiff % (pillsDays + breakDays)) + 1;
+          console.log('adding event for', dateOfCell, startDate, 'day', dayOfCycle);
+
+          if (dayOfCycle <= pillsDays) {
+            const eventDiv = document.createElement("div");
+            eventDiv.classList.add("event");
+            eventDiv.innerText = dayOfCycle.toString().padStart(2, '0');
+            daySquare.appendChild(eventDiv);
+          }
         }
         daySquare.addEventListener("click", () => openModal(dayString));
       } else if (i <= paddingDays) {
